@@ -27,7 +27,7 @@ escala_ponto2 = None
 ponto_x, ponto_y = -1, -1
 
 # Carregar o vídeo
-video_path = "Aqui deixei o caminho do arquivo do video"
+video_path = r"C:\Users\giova\Downloads\material_unicamp\f359\primeiro_4mm.mp4"
 cap = cv2.VideoCapture(video_path)
 
 # Verificar se o vídeo foi carregado corretamente
@@ -155,9 +155,9 @@ print(f"Frequência Teórica (Modelo): {f_teorica:.4f} Hz")
 
 # Calculando o Modelo Teórico
 A0 = max(trajetoria_y)  # Amplitude inicial (valor máximo da amplitude experimental)
-m0 = 0.1452             # Massa inicial em kg (145,2 g)
-c = 0.0158              # Taxa de perda de massa (medido teoricamente pelo diametro)
-b = 0.277              # Coeficiente de amortecimento (medido teoricamente pelo diametro)
+m0 = 145.2             # Massa inicial em kg (145,2 g)
+c = 15.83           # Taxa de perda de massa (medido teoricamente pelo diametro)
+b = 0.277  * 1000            # Coeficiente de amortecimento (medido teoricamente pelo diametro)
 
 # Calculando o parâmetro beta
 beta = (b / (2 * c)) + (1 / 4)
@@ -175,14 +175,44 @@ plt.grid(True, linestyle='--', alpha=0.6)
 plt.legend()
 plt.show()
 
-# Gerando o gráfico da FFT
-plt.figure(figsize=(12, 6))
-plt.plot(positive_freqs, positive_magnitude, color='purple')
-plt.axvline(dominant_freq, color='r', linestyle='--', label=f"Frequência Dominante: {dominant_freq:.4f} Hz")
-plt.axvline(f_teorica, color='g', linestyle='--', label=f"Frequência Teórica: {f_teorica:.4f} Hz")
-plt.title("Transformada de Fourier da Amplitude Experimental")
-plt.xlabel("Frequência (Hz)")
-plt.ylabel("Magnitude")
-plt.legend()
-plt.grid(True, linestyle='--', alpha=0.6)
-plt.show()
+# PLOT DAS TRANSFORMADAS DE FOURIER
+
+# Parâmetros
+window_duration = 5  # Duração de cada janela em segundos
+samples_per_window = int(window_duration * fps)  # Número de amostras por janela
+
+# Preparando as janelas
+total_samples = len(trajetoria_y)
+num_windows = total_samples // samples_per_window
+
+for i in range(num_windows):
+    # Selecionar os dados da janela
+    start = i * samples_per_window
+    end = start + samples_per_window
+    window_y = np.array(trajetoria_y[start:end])
+    window_t = np.array(tempos[start:end])
+
+    # Centralizar a janela
+    window_y_centralizado = window_y - np.mean(window_y)
+
+    # FFT
+    fft_result = fft(window_y_centralizado)
+    fft_freqs = fftfreq(len(window_y_centralizado), 1 / fps)
+    
+    # Filtrar apenas frequências positivas
+    mask = fft_freqs > 0
+    fft_freqs = fft_freqs[mask]
+    fft_magnitude = np.abs(fft_result[mask])
+
+    # Salvar o gráfico da FFT
+    plt.figure(figsize=(10, 5))
+    plt.plot(fft_freqs, fft_magnitude, color='purple')
+    plt.xlabel("Frequência (Hz)")
+    plt.ylabel("Magnitude")
+    plt.title(f"FFT da Janela {i+1} ({window_t[0]:.2f}s a {window_t[-1]:.2f}s)")
+    plt.grid(True, linestyle='--', alpha=0.6)
+    plt.tight_layout()
+    plt.savefig(f'fft_janela_{i+1}.pdf')
+    plt.close()
+
+print(f"Análise por janelas finalizada: {num_windows} gráficos de FFT salvos em PDF.")
