@@ -2,6 +2,7 @@ import cv2
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.fft import fft, fftfreq, ifft
+import pandas as pd
 
 def selecionar_ponto(event, x, y, flags, param):
     global ponto_selecionado, ponto_x, ponto_y, escala_definida, escala_ponto1, escala_ponto2
@@ -27,7 +28,7 @@ escala_ponto2 = None
 ponto_x, ponto_y = -1, -1
 
 # Carregar o vídeo
-video_path = r"C:\Users\giova\Downloads\material_unicamp\f359\primeiro_4mm.mp4"
+video_path = r"C:\Users\giova\Downloads\material_unicamp\f359\primeiro_4mm_3.mp4"
 cap = cv2.VideoCapture(video_path)
 
 # Verificar se o vídeo foi carregado corretamente
@@ -134,6 +135,16 @@ while True:
 
 cap.release()
 cv2.destroyAllWindows()
+
+# Criar DataFrame com os dados coletados
+df = pd.DataFrame({
+    'Tempo (s)': tempos,
+    'Deslocamento Y (cm)': trajetoria_y
+})
+
+# Salvar em CSV
+df.to_csv('dados_experimento.csv', index=False, sep=';', decimal=',')
+print("Arquivo CSV 'dados_experimento.csv' salvo com sucesso.")
 
 # Aplicando a Transformada de Fourier na Amplitude
 trajetoria_y_centralizada = np.array(trajetoria_y) - np.mean(trajetoria_y)
